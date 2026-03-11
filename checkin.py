@@ -168,9 +168,13 @@ def pushplus(token, title, content):
             'desp': content,
             'channel': '9'
         }
-        requests.post(url, data=data, timeout=5)
+        response = requests.post(url, data=data, timeout=5)
         log("✅ PushPlus 推送成功")
-    except:
+    except requests.exceptions.Timeout:
+        log('请求超时')
+    except requests.exceptions.RequestException as e:
+        log(f'请求发生错误: {e}')
+    except    
         log("❌ PushPlus 推送失败")
 
 def main():
