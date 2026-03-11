@@ -161,8 +161,8 @@ class GLaDOS:
 def pushplus(token, title, content):
     if not token: return
     try:
-        url = "http://www.pushplus.plus/send"
-        requests.get(url, params={'token': token, 'title': title, 'content': content, 'template': 'html'}, timeout=5)
+        url = f"https://sctapi.ftqq.com{token}.send"
+        requests.post(url, params={'title': title, 'desp': content, 'channel': '9'}, timeout=5)
         log("✅ PushPlus 推送成功")
     except:
         log("❌ PushPlus 推送失败")
