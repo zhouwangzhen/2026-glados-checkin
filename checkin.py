@@ -40,7 +40,8 @@ HEADERS = {
 # ================= 工具函数 =================
 
 def log(msg):
-    ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    time = datetime.now() + timedelta(hours=8)
+    ts = time.strftime("%Y-%m-%d %H:%M:%S")
     print(f"[{ts}] {msg}")
 
 def extract_cookie(raw: str):
@@ -167,7 +168,7 @@ def pushplus(token, title, content):
             'desp': content,
             'channel': '9'
         }
-        requests.post(url, data, timeout=5)
+        requests.post(url, data=data, timeout=5)
         log("✅ PushPlus 推送成功")
     except:
         log("❌ PushPlus 推送失败")
