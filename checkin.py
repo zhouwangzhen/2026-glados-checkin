@@ -162,6 +162,7 @@ class GLaDOS:
 def pushplus(token, title, content):
     if not token: return
     try:
+        log(token)
         url = f"https://sctapi.ftqq.com{token}.send"
         data = {
             'title': title,
@@ -216,6 +217,7 @@ def main():
 
     # Push
     ptoken = os.environ.get("PUSHPLUS_TOKEN")
+    log(ptoken)
     if ptoken:
         # Get first user's points for title
         first_points = "多账户"
