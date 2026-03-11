@@ -170,11 +170,9 @@ def pushplus(token, title, content):
         }
         response = requests.post(url, data=data, timeout=5)
         log("✅ PushPlus 推送成功")
-    except requests.exceptions.Timeout:
-        log('请求超时')
-    except requests.exceptions.RequestException as e:
+    except Exception as e:
         log(f'请求发生错误: {e}')
-    except    
+    except:    
         log("❌ PushPlus 推送失败")
 
 def main():
