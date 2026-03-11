@@ -162,7 +162,7 @@ class GLaDOS:
 def pushplus(token, title, content):
     if not token: return
     try:
-        url = "https://sctapi.ftqq.comSCT320953Tcj91y23mQFSrh8Hkgxc5cz8c.send"
+        url = f"https://sctapi.ftqq.com/{token}.send"
         data = {
             'title': title,
             'desp': content,
