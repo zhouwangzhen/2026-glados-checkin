@@ -16,7 +16,7 @@ import json
 import os
 import sys
 import time
-from datetime import datetime
+from datetime import datetime, timedelta
 
 # Fix Windows Unicode Output
 if sys.platform.startswith('win'):
@@ -162,7 +162,12 @@ def pushplus(token, title, content):
     if not token: return
     try:
         url = f"https://sctapi.ftqq.com{token}.send"
-        requests.post(url, params={'title': title, 'desp': content, 'channel': '9'}, timeout=5)
+        data = {
+            'title': title,
+            'desp': content,
+            'channel': '9'
+        }
+        requests.post(url, data, timeout=5)
         log("✅ PushPlus 推送成功")
     except:
         log("❌ PushPlus 推送失败")
@@ -217,8 +222,9 @@ def main():
             pass 
         
         title = f"GLaDOS签到: 成功{success_cnt}/{len(cookies)}"
+        time = datetime.now() + timedelta(hours=8)
         content = "".join(results)
-        content += f"<br><small>时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</small>"
+        content += f"<br><small>时间: {time.strftime('%Y-%m-%d %H:%M:%S')}</small>"
         pushplus(ptoken, title, content)
 
 if __name__ == '__main__':
