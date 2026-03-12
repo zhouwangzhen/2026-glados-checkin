@@ -201,7 +201,8 @@ def main():
         if "Checkin" in msg: success_cnt += 1
         
         # 4. Result Formatting
-        result = f"👤 {g.email}\n当前积分: {g.points} {g.points_change}\n剩余天数: {g.left_days} 天\n签到结果: {msg}\n🎁 兑换选项: {g.exchange_info}"
+        result.append(f"👤 {g.email}\n当前积分: {g.points} {g.points_change}\n剩余天数: {g.left_days} 天
+        \n签到结果: {msg}\n🎁 兑换选项: {g.exchange_info}")
 
     # Push
     ptoken = os.environ.get("PUSHPLUS_TOKEN")
