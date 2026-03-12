@@ -201,18 +201,7 @@ def main():
         if "Checkin" in msg: success_cnt += 1
         
         # 4. Result Formatting
-        results.append(f"""
-<div style="border:2px solid #333; padding:15px; margin-bottom:15px; border-radius:10px; background:#fff;">
-    <h3 style="margin:0 0 15px 0; color:#333; border-bottom:2px solid #333; padding-bottom:8px;">👤 {g.email}</h3>
-    <p style="margin:8px 0; color:#000; font-size:16px;"><b>当前积分:</b> <span style="color:#e74c3c; font-size:22px; font-weight:bold;">{g.points}</span> <span style="color:#27ae60; font-weight:bold;">({g.points_change})</span></p>
-    <p style="margin:8px 0; color:#000; font-size:16px;"><b>剩余天数:</b> <span style="font-weight:bold;">{g.left_days} 天</span></p>
-    <p style="margin:8px 0; color:#000; font-size:16px;"><b>签到结果:</b> {msg}</p>
-    <div style="margin-top:15px; padding:12px; background:#f0f0f0; border-radius:8px; border:1px solid #ccc;">
-        <p style="margin:0 0 8px 0; color:#333; font-weight:bold; font-size:15px;">🎁 兑换选项:</p>
-        <p style="margin:0; color:#000; font-size:14px; line-height:1.8;">{g.exchange_info}</p>
-    </div>
-</div>
-""")
+        result = f"👤 {g.email}\n当前积分: {g.points} {g.points_change}\n剩余天数: {g.left_days} 天\n签到结果: {msg}\n🎁 兑换选项: {g.exchange_info}"
 
     # Push
     ptoken = os.environ.get("PUSHPLUS_TOKEN")
@@ -227,7 +216,7 @@ def main():
         title = f"GLaDOS签到: 成功{success_cnt}/{len(cookies)}"
         time = datetime.now() + timedelta(hours=8)
         content = "".join(results)
-        content += f"<br><small>时间: {time.strftime('%Y-%m-%d %H:%M:%S')}</small>"
+        content += f"\n时间: {time.strftime('%Y-%m-%d %H:%M:%S')}"
         pushplus(ptoken, title, content)
 
 if __name__ == '__main__':
