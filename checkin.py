@@ -375,67 +375,17 @@ def pushplus(token, title, content):
     if not token:
         return False
     try:
-        url = "https://www.pushplus.plus/send"
-        response = requests.post(
-            url,
-            json={'token': token, 'title': title, 'content': content, 'template': 'html'},
-            timeout=10,
-        )
-        response.raise_for_status()
-        payload = response.json()
-        if payload.get('code') not in (None, 0, 200):
-            raise RuntimeError(payload.get('msg', f"PushPlus code={payload.get('code')}"))
+        url = f"https://sctapi.ftqq.com/{token}.send"
+        data = {
+            'title': title,
+            'desp': content,
+            'channel': '9'
+        }
+        response = requests.post(url, data=data, timeout=5)
         log("✅ PushPlus 推送成功")
         return True
     except (requests.RequestException, ValueError, RuntimeError) as e:
         log(f"❌ PushPlus 推送失败: {e}")
-        return False
-
-def telegram_push(token, chat_id, title, content):
-    if not token or not chat_id: return
-    try:
-        import re
-        url = f"https://api.telegram.org/bot{token}/sendMessage"
-        # Convert HTML to be Telegram-compatible
-        text = f"<b>{title}</b>\n\n{content}"
-        
-        # 1. Block elements replacements (handle tags with attributes)
-        text = text.replace("<br>", "\n")
-        # Handle H3 tags
-        text = re.sub(r"<h3[^>]*>", "<b>", text)
-        text = text.replace("</h3>", "</b>\n")
-        
-        # 2. Paragraph and Div tags
-        text = re.sub(r"<(div|p)[^>]*>", "", text)
-        text = re.sub(r"</(div|p)>", "\n", text)
-        
-        # 3. Span and small tags
-        text = re.sub(r"<(span|small)[^>]*>", "", text)
-        text = re.sub(r"</(span|small)>", "", text)
-        
-        # 4. Final cleaning: Strip all HTML tags EXCEPT the ones supported by Telegram: b, i, u, s, a, code, pre
-        text = re.sub(r"<(?!\/?(b|i|u|s|a|code|pre)\b)[^>]+>", "", text)
-        
-        # 5. Dedent each line to fix alignment issues caused by HTML template indentation
-        lines = [line.strip() for line in text.split('\n')]
-        text = "\n".join(lines)
-        
-        # 6. Collapse multiple newlines
-        text = re.sub(r"\n\s*\n", "\n\n", text).strip()
-        
-        data = {
-            "chat_id": chat_id,
-            "text": text,
-            "parse_mode": "HTML"
-        }
-        resp = requests.post(url, json=data, timeout=10)
-        if resp.status_code != 200:
-            log(f"❌ Telegram 推送失败: HTTP {resp.status_code}")
-            return False
-        log("✅ Telegram 推送成功")
-        return True
-    except (requests.RequestException, ValueError) as e:
-        log(f"❌ Telegram 推送失败: {e}")
         return False
 
 def main():
@@ -445,11 +395,6 @@ def main():
         return 1
 
     exchange_plan = get_exchange_plan()
-    if exchange_plan:
-        plan = EXCHANGE_PLANS[exchange_plan]
-        log(f"🎁 自动兑换已启用: {plan['points']}分 → {plan['days']}天 (EXCHANGE_PLAN={exchange_plan})")
-    else:
-        log("⏭️ 自动兑换未启用")
 
     results = []
     success_cnt = 0
@@ -470,61 +415,27 @@ def main():
 
         # 2.5 Auto exchange (issue #11): runs after check-in so the
         # just-earned points count toward the threshold.
-        if exchange_plan:
-            g.exchange_result = auto_exchange(g, exchange_plan)
-            if not g.exchange_result.startswith("⏭️"):
-                exchange_events += 1
 
         # 3. Log
         status_icon = "✅" if is_success else "❌"
         # Actions logs are public in a public repository. Keep account details
         # inside the private notification instead of exposing the email here.
-        log(f"{status_icon} 账号 {i} | 积分: {g.points} | 天数: {g.left_days} | 结果: {msg}")
+        log(f"用户: {g.email} | 积分: {g.points} | 天数: {g.left_days} | 结果: {msg}")
 
         if is_success:
             success_cnt += 1
 
         # 4. Result Formatting
-        exchange_line = ""
-        if exchange_plan:
-            exchange_line = f"""
-    <p style="margin:8px 0; color:#000; font-size:16px;"><b>自动兑换:</b> {html.escape(g.exchange_result)}</p>"""
-        results.append(f"""
-<div style="border:2px solid #333; padding:15px; margin-bottom:15px; border-radius:10px; background:#fff;">
-    <h3 style="margin:0 0 15px 0; color:#333; border-bottom:2px solid #333; padding-bottom:8px;">👤 {html.escape(str(g.email))}</h3>
-    <p style="margin:8px 0; color:#000; font-size:16px;"><b>当前积分:</b> <span style="color:#e74c3c; font-size:22px; font-weight:bold;">{g.points}</span> <span style="color:#27ae60; font-weight:bold;">({g.points_change})</span></p>
-    <p style="margin:8px 0; color:#000; font-size:16px;"><b>剩余天数:</b> <span style="font-weight:bold;">{g.left_days} 天</span></p>
-    <p style="margin:8px 0; color:#000; font-size:16px;"><b>签到结果:</b> {html.escape(str(msg))}</p>{exchange_line}
-    <div style="margin-top:15px; padding:12px; background:#f0f0f0; border-radius:8px; border:1px solid #ccc;">
-        <p style="margin:0 0 8px 0; color:#333; font-weight:bold; font-size:15px;">🎁 兑换选项:</p>
-        <p style="margin:0; color:#000; font-size:14px; line-height:1.8;">
-{g.exchange_info}</p>
-    </div>
-</div>
-""")
-
-    # Push
-    push_level = os.environ.get("PUSH_LEVEL", "fail_only").lower()
-
-    # Exchange outcomes (success or failure) are worth notifying even when
-    # PUSH_LEVEL=fail_only, otherwise an always-failing exchange stays silent.
-    if push_level == "fail_only" and success_cnt == len(cookies) and exchange_events == 0:
-        log("⏭️ 根据 PUSH_LEVEL=fail_only 设置，所有账号签到成功，跳过推送")
-        return 0
+        results.append(f"👤 {g.email}\n当前积分: {g.points} {g.points_change}\n剩余天数: {g.left_days} 天\n签到结果: {msg}\n🎁 兑换选项: {g.exchange_info}")
 
     ptoken = os.environ.get("PUSHPLUS_TOKEN")
-    tg_token = os.environ.get("TELEGRAM_BOT_TOKEN")
-    tg_chat_id = os.environ.get("TELEGRAM_CHAT_ID")
     
     if ptoken or (tg_token and tg_chat_id):
         title = f"GLaDOS签到: 成功{success_cnt}/{len(cookies)}"
+        time = datetime.now() + timedelta(hours=8)
         content = "".join(results)
-        content += f"<br><small>时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</small>"
-        
-        if ptoken:
-            pushplus(ptoken, title, content)
-        if tg_token and tg_chat_id:
-            telegram_push(tg_token, tg_chat_id, title, content)
+        content += f"\n时间: {time.strftime('%Y-%m-%d %H:%M:%S')}"
+        pushplus(ptoken, title, content)
 
     return 0 if success_cnt == len(cookies) else 1
 
