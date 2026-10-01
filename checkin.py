@@ -395,6 +395,11 @@ def main():
         return 1
 
     exchange_plan = get_exchange_plan()
+    if exchange_plan:
+        plan = EXCHANGE_PLANS[exchange_plan]
+        log(f"🎁 自动兑换已启用: {plan['points']}分 → {plan['days']}天 (EXCHANGE_PLAN={exchange_plan})")
+    else:
+        log("⏭️ 自动兑换未启用")
 
     results = []
     success_cnt = 0
@@ -415,7 +420,10 @@ def main():
 
         # 2.5 Auto exchange (issue #11): runs after check-in so the
         # just-earned points count toward the threshold.
-
+        if exchange_plan:
+            g.exchange_result = auto_exchange(g, exchange_plan)
+            if not g.exchange_result.startswith("⏭️"):
+                exchange_events += 1
         # 3. Log
         status_icon = "✅" if is_success else "❌"
         # Actions logs are public in a public repository. Keep account details
